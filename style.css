@@ -1021,3 +1021,67 @@ figure.instagram-item img.insta-image {
 .post-navigation:focus svg {
     fill: var(--primary-color);
 }
+
+
+/* Cart Page Styles */
+.cart-container {
+  margin-top: 5em;
+}
+
+.cart-title {
+  font-size: 2em;
+  text-transform: uppercase;
+  margin-bottom: 1em;
+}
+
+.cart-item {
+  border: 1px solid var(--gray-color-300);
+  border-radius: 5px;
+  padding: 1em;
+  margin-bottom: 1em;
+  background-color: var(--white-color);
+}
+
+.cart-item img {
+  max-width: 100px;
+  margin-right: 1em;
+}
+
+.cart-item-details {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cart-item-info {
+  flex-grow: 1;
+  margin-right: 1em;
+}
+
+.cart-item-actions {
+  display: flex;
+  align-items: center;
+}
+
+.cart-item-actions form {
+  display: inline;
+  margin-right: 0.5em;
+}
+
+.cart-item-actions input[type="number"] {
+  width: 60px;
+  margin-right: 0.5em;
+  text-align: center;
+}
+
+.cart-item-actions button {
+  padding: 0.5em 1em;
+  font-size: 1em;
+}
+
+.cart-total {
+  font-size: 1.5em;
+  text-align: right;
+  margin-top: 2em;
+  font-weight: bold;
+}

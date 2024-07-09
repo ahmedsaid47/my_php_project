@@ -115,20 +115,28 @@ $result = $stmt->get_result();
         <div class="row">
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
-                    <div class="col-md-4 mb-4">
-                        <div class="product-card">
+                    <div class="col-md-4 mb-4  ">
+
+                        <div class="product-card position-relative">
+
                             <div class="image-holder">
-                                <img src="<?php echo $row['image_url']; ?>" alt="product" class="img-fluid">
+                                <img src="<?php echo $row['image_url']; ?>" alt="product-item" class="img-fluid">
                             </div>
-                            <div class="cart-concern">
+
+
+                            <div class="cart-concern position-absolute">
+                            <div class="cart-button d-flex">
                                 <form method="POST">
-                                    <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
-                                    <button type="submit" name="add_to_cart" class="btn btn-black">Add to Cart</button>
-                                </form>
+                                            <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
+                                            <button type="submit" name="add_to_cart" class="btn btn-black">Add to Cart</button>
+                                </form>                      
                             </div>
-                            <div class="card-detail">
-                                <h3 class="card-title"><?php echo $row['name']; ?></h3>
-                                <span class="item-price">$<?php echo $row['price']; ?></span>
+                            </div>
+
+
+                            <div class="card-detail d-flex justify-content-between align-items-baseline pt-3">
+                                <h3 class="card-title text-uppercase"><?php echo $row['name']; ?></h3>
+                                <span class="item-price text-primary">$<?php echo $row['price']; ?></span>
                             </div>
                         </div>
                     </div>

@@ -12,6 +12,7 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 error_reporting(E_ALL);
 
+
 // Abonelik işlemi için değişken tanımlaması
 $subscription_message = "";
 
@@ -27,6 +28,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["subscribe"])) {
     }
 }
 
+// Add to cart işlemi
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
+    $user_id = $_SESSION['user_id'];
+    $product_id = $_POST['product_id'];
+    
+    // Kullanıcının sepetini kontrol et veya oluştur
+    $sql = "SELECT cart_id FROM carts WHERE user_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows == 0) {
+        // Sepet yoksa yeni bir sepet oluştur
+        $sql = "INSERT INTO carts (user_id) VALUES (?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $user_id);
+        $stmt->execute();
+        $cart_id = $stmt->insert_id;
+    } else {
+        // Mevcut sepeti al
+        $cart = $result->fetch_assoc();
+        $cart_id = $cart['cart_id'];
+    }
+    
+    // Ürünü sepete ekle
+    $sql = "INSERT INTO cart_items (cart_id, product_id, quantity) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE quantity = quantity + 1";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('ii', $cart_id, $product_id);
+    $stmt->execute();
+}
+
 // Veritabanından veri çekmek için fonksiyon
 function fetch_data($conn, $sql) {
     $result = $conn->query($sql);
@@ -38,8 +71,8 @@ function fetch_data($conn, $sql) {
 
 // Servisler, mobil ürünler, akıllı saatler, promosyonlar ve müşteri yorumlarını veritabanından çek
 $services = fetch_data($conn, "SELECT title, description, icon FROM services");
-$mobile_products = fetch_data($conn, "SELECT name, price, image_url FROM products WHERE category = 'Mobile'");
-$smart_watches = fetch_data($conn, "SELECT name, price, image_url FROM products WHERE category = 'Smart Watches'");
+$mobile_products = fetch_data($conn, "SELECT product_id, name, price, image_url FROM products WHERE category = 'Mobile'");
+$smart_watches = fetch_data($conn, "SELECT product_id, name, price, image_url FROM products WHERE category = 'Smart Watches'");
 $promotion = fetch_data($conn, "SELECT title, subtitle, description, image_url, link_url FROM promotions LIMIT 1")[0] ?? null;
 $testimonials = fetch_data($conn, "SELECT author_name, content, rating FROM testimonials");
 ?>
@@ -113,20 +146,7 @@ $testimonials = fetch_data($conn, "SELECT author_name, content, rating FROM test
             <div class="swiper-wrapper">
               <?php foreach ($mobile_products as $product): ?>
                 <div class="swiper-slide">
-                  <div class="product-card position-relative">
-                    <div class="image-holder">
-                      <img src="<?php echo $product['image_url']; ?>" alt="product-item" class="img-fluid">
-                    </div>
-                    <div class="cart-concern position-absolute">
-                      <div class="cart-button d-flex">
-                        <a href="#" class="btn btn-medium btn-black">Add to Cart<svg class="cart-outline"><use xlink:href="#cart-outline"></use></svg></a>
-                      </div>
-                    </div>
-                    <div class="card-detail d-flex justify-content-between align-items-baseline pt-3">
-                      <h3 class="card-title text-uppercase"><a href="#"><?php echo $product['name']; ?></a></h3>
-                      <span class="item-price text-primary">$<?php echo $product['price']; ?></span>
-                    </div>
-                  </div>
+                  <?php include('partials/_product-card.php'); ?>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -150,20 +170,7 @@ $testimonials = fetch_data($conn, "SELECT author_name, content, rating FROM test
             <div class="swiper-wrapper">
               <?php foreach ($smart_watches as $watch): ?>
                 <div class="swiper-slide">
-                  <div class="product-card position-relative">
-                    <div class="image-holder">
-                      <img src="<?php echo $watch['image_url']; ?>" alt="product-item" class="img-fluid">
-                    </div>
-                    <div class="cart-concern position-absolute">
-                      <div class="cart-button d-flex">
-                        <a href="#" class="btn btn-medium btn-black">Add to Cart<svg class="cart-outline"><use xlink:href="#cart-outline"></use></svg></a>
-                      </div>
-                    </div>
-                    <div class="card-detail d-flex justify-content-between align-items-baseline pt-3">
-                      <h3 class="card-title text-uppercase"><a href="#"><?php echo $watch['name']; ?></a></h3>
-                      <span class="item-price text-primary">$<?php echo $watch['price']; ?></span>
-                    </div>
-                  </div>
+                  <?php $product = $watch; include('partials/_product-card.php'); ?>
                 </div>
               <?php endforeach; ?>
             </div>
@@ -279,4 +286,3 @@ $testimonials = fetch_data($conn, "SELECT author_name, content, rating FROM test
 // Veritabanı bağlantısını kapat
 $conn->close();
 ?>
-
