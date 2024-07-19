@@ -1,21 +1,69 @@
 <?php
 session_start();
 
-$conn = new mysqli('localhost', 'root', '123', 'my_php_project');
+include 'db.php';
 
-if ($conn->connect_error) {
-  die("Connection failed: " . $conn->connect_error);
-}
 
-// Sepet sayısını kontrol et ve başlat
-if (!isset($_SESSION['cart_count'])) {
+if (isset($_SESSION['user_id'])) {
+    $user_id = $_SESSION['user_id'];
+  
+    // Kullanıcının sepet ID'sini al
+    $sql = "SELECT cart_id FROM carts WHERE user_id = $user_id";
+    $result = $conn->query($sql);
+  
+    if ($result->num_rows > 0) {
+        $row = $result->fetch_assoc();
+        $cart_id = $row['cart_id'];
+  
+        // Sepetteki ürün sayısını al
+        $sql = "SELECT SUM(quantity) as cart_count FROM cart_items WHERE cart_id = $cart_id";
+        $result = $conn->query($sql);
+  
+        if ($result->num_rows > 0) {
+            $row = $result->fetch_assoc();
+            $_SESSION['cart_count'] = $row['cart_count'];
+        } else {
+            $_SESSION['cart_count'] = 0;
+        }
+    } else {
+        $_SESSION['cart_count'] = 0;
+    }
+  } else {
     $_SESSION['cart_count'] = 0;
-}
-
-// Add to cart işlemi
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
-    $_SESSION['cart_count'] += 1;
-}
+  }
+  
+  
+  // Add to cart işlemi
+  if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
+      $user_id = $_SESSION['user_id'];
+      $product_id = $_POST['product_id'];
+      
+      // Kullanıcının sepetini kontrol et veya oluştur
+      $sql = "SELECT cart_id FROM carts WHERE user_id = ?";
+      $stmt = $conn->prepare($sql);
+      $stmt->bind_param('i', $user_id);
+      $stmt->execute();
+      $result = $stmt->get_result();
+      
+      if ($result->num_rows == 0) {
+          // Sepet yoksa yeni bir sepet oluştur
+          $sql = "INSERT INTO carts (user_id) VALUES (?)";
+          $stmt = $conn->prepare($sql);
+          $stmt->bind_param('i', $user_id);
+          $stmt->execute();
+          $cart_id = $stmt->insert_id;
+      } else {
+          // Mevcut sepeti al
+          $cart = $result->fetch_assoc();
+          $cart_id = $cart['cart_id'];
+      }
+      
+      // Ürünü sepete ekle
+      $sql = "INSERT INTO cart_items (cart_id, product_id, quantity) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE quantity = quantity + 1";
+      $stmt = $conn->prepare($sql);
+      $stmt->bind_param('ii', $cart_id, $product_id);
+      $stmt->execute();
+  }
 
 // Sayfalamayı ayarla
 $limit = 10; // Sayfa başına ürün sayısı
@@ -51,7 +99,7 @@ $result_count = $stmt_count->get_result();
 $total_products = $result_count->fetch_assoc()['total'];
 
 // Ürünleri al
-$sql = "SELECT name, price, image_url FROM products $where ORDER BY $order_by LIMIT ? OFFSET ?";
+$sql = "SELECT product_id, name, price, image_url FROM products $where ORDER BY $order_by LIMIT ? OFFSET ?";
 $stmt = $conn->prepare($sql);
 
 if ($category !== 'All' && !empty($search)) {
@@ -115,31 +163,26 @@ $result = $stmt->get_result();
         <div class="row">
             <?php if ($result->num_rows > 0): ?>
                 <?php while ($row = $result->fetch_assoc()): ?>
-                    <div class="col-md-4 mb-4  ">
-
-                        <div class="product-card position-relative">
-
-                            <div class="image-holder">
-                                <img src="<?php echo $row['image_url']; ?>" alt="product-item" class="img-fluid">
-                            </div>
-
-
-                            <div class="cart-concern position-absolute">
-                            <div class="cart-button d-flex">
-                                <form method="POST">
-                                            <input type="hidden" name="product_id" value="<?php echo $row['id']; ?>">
-                                            <button type="submit" name="add_to_cart" class="btn btn-black">Add to Cart</button>
-                                </form>                      
-                            </div>
-                            </div>
-
-
-                            <div class="card-detail d-flex justify-content-between align-items-baseline pt-3">
-                                <h3 class="card-title text-uppercase"><?php echo $row['name']; ?></h3>
-                                <span class="item-price text-primary">$<?php echo $row['price']; ?></span>
-                            </div>
-                        </div>
-                    </div>
+                    <div class="col-md-4 mb-4">
+    <div class="product-card position-relative">
+        <div class="image-holder">
+            <img src="<?php echo $row['image_url']; ?>" alt="product-item" class="img-fluid">
+        </div>
+        <div class="cart-concern position-absolute">
+            <div class="cart-button d-flex flex-column">
+                <form method="POST">
+                    <input type="hidden" name="product_id" value="<?php echo $row['product_id']; ?>">
+                    <button type="submit" name="add_to_cart" class="btn btn-black mb-2">Add to Cart</button>
+                </form>
+                <a href="single-product.php?product_id=<?php echo $row['product_id']; ?>" class="btn btn-primary">Product Details</a>
+            </div>
+        </div>
+        <div class="card-detail d-flex justify-content-between align-items-baseline pt-3">
+            <h3 class="card-title text-uppercase"><?php echo $row['name']; ?></h3>
+            <span class="item-price text-primary">$<?php echo $row['price']; ?></span>
+        </div>
+    </div>
+</div>
                 <?php endwhile; ?>
             <?php else: ?>
                 <p>No products found.</p>

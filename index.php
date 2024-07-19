@@ -2,11 +2,7 @@
 // Oturumu başlat
 session_start();
 
-$conn = new mysqli('localhost', 'root', '123', 'my_php_project');
-
-if ($conn->connect_error) {
-  die("Connection failed: " . $conn->connect_error);
-}
+include 'db.php';
 
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -27,6 +23,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["subscribe"])) {
         $subscription_message = "Error: " . $sql . "<br>" . $conn->error;
     }
 }
+
+
+if (isset($_SESSION['user_id'])) {
+  $user_id = $_SESSION['user_id'];
+
+  // Kullanıcının sepet ID'sini al
+  $sql = "SELECT cart_id FROM carts WHERE user_id = $user_id";
+  $result = $conn->query($sql);
+
+  if ($result->num_rows > 0) {
+      $row = $result->fetch_assoc();
+      $cart_id = $row['cart_id'];
+
+      // Sepetteki ürün sayısını al
+      $sql = "SELECT SUM(quantity) as cart_count FROM cart_items WHERE cart_id = $cart_id";
+      $result = $conn->query($sql);
+
+      if ($result->num_rows > 0) {
+          $row = $result->fetch_assoc();
+          $_SESSION['cart_count'] = $row['cart_count'];
+      } else {
+          $_SESSION['cart_count'] = 0;
+      }
+  } else {
+      $_SESSION['cart_count'] = 0;
+  }
+} else {
+  $_SESSION['cart_count'] = 0;
+}
+
 
 // Add to cart işlemi
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
@@ -180,7 +206,7 @@ $testimonials = fetch_data($conn, "SELECT author_name, content, rating FROM test
       <div class="swiper-pagination position-absolute text-center"></div>
     </section>
 
-    <!-- Yılbaşı indirim bölümü -->
+    <!-- indirim bölümü -->
     <?php if ($promotion): ?>
       <section id="yearly-sale" class="bg-light-blue overflow-hidden mt-5 padding-xlarge" style="background-image: url('<?php echo $promotion['image_url']; ?>');background-position: right; background-repeat: no-repeat;">
         <div class="row d-flex flex-wrap align-items-center">
