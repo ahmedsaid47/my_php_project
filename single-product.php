@@ -52,6 +52,27 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
     header("Location: single-product.php?product_id=$product_id");
     exit;
 }
+
+// Kullanıcı yorumu ekleme işlemi
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["submit_review"])) {
+    $user_id = $_SESSION['user_id'];
+    $review_text = $_POST['review_text'];
+    $rating = $_POST['rating'];
+    
+    $sql = "INSERT INTO product_reviews (product_id, user_id, review_text, rating) VALUES (?, ?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('iisi', $product_id, $user_id, $review_text, $rating);
+    $stmt->execute();
+
+    header("Location: single-product.php?product_id=$product_id");
+    exit;
+}
+
+// Ürün yorumlarını al
+$reviews_query = "SELECT pr.*, u.username FROM product_reviews pr JOIN users u ON pr.user_id = u.id WHERE pr.product_id = $product_id ORDER BY pr.created_at DESC";
+$reviews_result = $conn->query($reviews_query);
+$reviews = $reviews_result->fetch_all(MYSQLI_ASSOC);
+
 ?>
 
 <!DOCTYPE html>
@@ -66,10 +87,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
 
 <div class="container mt-5">
     <div class="row">
-        <div class="col-md-6">
-            <div class="product-card">
+        <div class="col-md-4">
+            <div class="product-card position-relative">
                 <div class="image-holder">
                     <img src="<?php echo $product['image_url']; ?>" alt="<?php echo $product['name']; ?>" class="img-fluid">
+                </div>
+                <div class="cart-concern">
+                    <button class="btn btn-black">Add to Cart</button>
                 </div>
             </div>
         </div>
@@ -112,10 +136,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
     <div class="row mt-5">
         <div class="col-12">
             <h3 class="text-uppercase">Customer Reviews</h3>
-            <!-- Yorumları buraya çekebilirsiniz -->
-            <div class="review">
+            <?php if (isset($_SESSION['user_id'])): ?>
+                <form method="POST" class="mb-4">
+                    <div class="form-group">
+                        <label for="review_text">Write your review:</label>
+                        <textarea id="review_text" name="review_text" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="rating">Rating:</label>
+                        <select id="rating" name="rating" class="form-control w-25">
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Very Good</option>
+                            <option value="3">3 - Good</option>
+                            <option value="2">2 - Fair</option>
+                            <option value="1">1 - Poor</option>
+                        </select>
+                    </div>
+                    <button type="submit" name="submit_review" class="btn btn-black mt-2">Submit Review</button>
+                </form>
+            <?php else: ?>
+                <p>Please <a href="login.php">login</a> to write a review.</p>
+            <?php endif; ?>
+
+            <!-- Yorumları Göster -->
+            <?php if ($reviews): ?>
+                <?php foreach ($reviews as $review): ?>
+                    <div class="review mb-3 p-3 bg-light">
+                        <strong><?php echo htmlspecialchars($review['username']); ?></strong>
+                        <span class="text-muted"> - <?php echo $review['created_at']; ?></span>
+                        <div><?php echo nl2br(htmlspecialchars($review['review_text'])); ?></div>
+                        <div class="text-warning">Rating: <?php echo str_repeat('★', $review['rating']) . str_repeat('☆', 5 - $review['rating']); ?></div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
                 <p>No reviews yet. Be the first to review this product!</p>
-            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>
