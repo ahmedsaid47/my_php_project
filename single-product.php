@@ -1,4 +1,5 @@
 <?php
+session_start();
 include 'db.php';
 
 // Ürün ID'sini al
@@ -13,20 +14,55 @@ if (!$product) {
     echo "Product not found!";
     exit;
 }
+
+// Add to cart işlemi
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
+    $user_id = $_SESSION['user_id'];
+    $product_id = $_POST['product_id'];
+    $quantity = $_POST['quantity'];
+    
+    // Kullanıcının sepetini kontrol et veya oluştur
+    $sql = "SELECT cart_id FROM carts WHERE user_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('i', $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    
+    if ($result->num_rows == 0) {
+        // Sepet yoksa yeni bir sepet oluştur
+        $sql = "INSERT INTO carts (user_id) VALUES (?)";
+        $stmt = $conn->prepare($sql);
+        $stmt->bind_param('i', $user_id);
+        $stmt->execute();
+        $cart_id = $stmt->insert_id;
+    } else {
+        // Mevcut sepeti al
+        $cart = $result->fetch_assoc();
+        $cart_id = $cart['cart_id'];
+    }
+    
+    // Ürünü sepete ekle
+    $sql = "INSERT INTO cart_items (cart_id, product_id, quantity) VALUES (?, ?, ?) 
+            ON DUPLICATE KEY UPDATE quantity = quantity + VALUES(quantity)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('iii', $cart_id, $product_id, $quantity);
+    $stmt->execute();
+    $_SESSION['cart_count'] += $quantity;
+
+    header("Location: single-product.php?product_id=$product_id");
+    exit;
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo $product['name']; ?> - Product Details</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
+<?php include('partials/_header.php') ?>
 
-<?php include '_navbar.php'; ?>
+<body data-bs-spy="scroll" data-bs-target="#navbar" data-bs-root-margin="0px 0px -40%" data-bs-smooth-scroll="true" tabindex="0">
+
+<?php include('partials/_svg.php') ?>
+
+<?php include 'partials/_navbar.php'; ?>
 
 <div class="container mt-5">
     <div class="row">
@@ -41,7 +77,7 @@ if (!$product) {
             <h1 class="card-title text-uppercase"><?php echo $product['name']; ?></h1>
             <p class="text-muted"><?php echo nl2br($product['description']); ?></p>
             <span class="item-price text-primary h2">$<?php echo $product['price']; ?></span>
-            <form method="POST" action="cart.php" class="mt-4">
+            <form method="POST" class="mt-4">
                 <input type="hidden" name="product_id" value="<?php echo $product['product_id']; ?>">
                 <div class="form-group">
                     <label for="quantity">Quantity:</label>
