@@ -91,6 +91,12 @@
                         Users
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="index.php?page=reviews">
+                        <span data-feather="message-square"></span>
+                        Reviews
+                    </a>
+                </li>
             </ul>
         </div>
     </nav>
