@@ -99,7 +99,7 @@ function fetch_data($conn, $sql) {
 $services = fetch_data($conn, "SELECT title, description, icon FROM services");
 $mobile_products = fetch_data($conn, "SELECT product_id, name, price, image_url FROM products WHERE category = 'Mobile'");
 $smart_watches = fetch_data($conn, "SELECT product_id, name, price, image_url FROM products WHERE category = 'Smart Watches'");
-$promotion = fetch_data($conn, "SELECT title, subtitle, description, image_url, link_url FROM promotions LIMIT 1")[0] ?? null;
+$promotions = fetch_data($conn, "SELECT title, subtitle, description, image_url, link_url FROM promotions");
 $testimonials = fetch_data($conn, "SELECT author_name, content, rating FROM testimonials");
 ?>
 
@@ -206,22 +206,24 @@ $testimonials = fetch_data($conn, "SELECT author_name, content, rating FROM test
       <div class="swiper-pagination position-absolute text-center"></div>
     </section>
 
-    <!-- indirim bölümü -->
-    <?php if ($promotion): ?>
-      <section id="yearly-sale" class="bg-light-blue overflow-hidden mt-5 padding-xlarge" style="background-image: url('<?php echo $promotion['image_url']; ?>');background-position: right; background-repeat: no-repeat;">
-        <div class="row d-flex flex-wrap align-items-center">
-          <div class="col-md-6 col-sm-12">
-            <div class="text-content offset-4 padding-medium">
-              <h3><?php echo $promotion['title']; ?></h3>
-              <h2 class="display-2 pb-5 text-uppercase text-dark"><?php echo $promotion['subtitle']; ?></h2>
-              <a href="<?php echo $promotion['link_url']; ?>" class="btn btn-medium btn-dark text-uppercase btn-rounded-none">Shop Sale</a>
-            </div>
-          </div>
-          <div class="col-md-6 col-sm-12">
-          </div>
-        </div>
-      </section>
-    <?php endif; ?>
+    <!-- İndirim bölümü -->
+     <?php if ($promotions): ?>
+        <?php foreach ($promotions as $promotion): ?>
+            <section id="yearly-sale" class="bg-light-blue overflow-hidden mt-5 padding-xlarge" style="background-image: url('<?php echo $promotion['image_url']; ?>');background-position: right; background-repeat: no-repeat;">
+                <div class="row d-flex flex-wrap align-items-center">
+                    <div class="col-md-6 col-sm-12">
+                        <div class="text-content offset-4 padding-medium">
+                            <h3><?php echo $promotion['title']; ?></h3>
+                            <h2 class="display-2 pb-5 text-uppercase text-dark"><?php echo $promotion['subtitle']; ?></h2>
+                            <a href="<?php echo $promotion['link_url']; ?>" class="btn btn-medium btn-dark text-uppercase btn-rounded-none">Shop Sale</a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 col-sm-12">
+                    </div>
+                </div>
+            </section>
+        <?php endforeach; ?>
+     <?php endif; ?>
 
     <!-- Müşteri yorumları bölümü -->
     <section id="testimonials" class="position-relative">

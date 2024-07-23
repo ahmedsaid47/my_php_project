@@ -97,6 +97,12 @@
                         Reviews
                     </a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="index.php?page=bilboard">
+                        <span data-feather="layout"></span>
+                        Bilboard
+                    </a>
+                </li>
             </ul>
         </div>
     </nav>

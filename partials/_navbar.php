@@ -40,16 +40,6 @@
                     </a>
                   </li>
 
-                  <?php if (isset($_SESSION['username'])): ?>
-                  <li class="pe-3">
-                    <a href="logout.php">
-                      <svg class="icon">
-                        <use xlink:href="#logout"></use>
-                      </svg>
-                    </a>
-                  </li>
-                  <?php endif; ?>
-
                   <li class="pe-3">
                     <a href="login.php">
                       <svg class="user">
@@ -59,6 +49,13 @@
                   </li>
 
                   <?php if (isset($_SESSION['username'])): ?>
+                  <li class="pe-3">
+                    <a href="logout.php">
+                      <svg class="icon">
+                        <use xlink:href="#logout"></use>
+                      </svg>
+                    </a>
+                  </li>
                   <li>
                     <a href="cart.php">
                       <svg class="cart">

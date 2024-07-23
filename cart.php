@@ -106,6 +106,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["checkout"])) {
 <?php include('partials/_header.php') ?>
 
 <body>
+
+    <?php include('partials/_svg.php') ?>
+
     <?php include('partials/_navbar.php') ?>
 
     <div class="container mt-5">
