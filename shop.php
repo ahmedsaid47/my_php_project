@@ -63,6 +63,7 @@ if (isset($_SESSION['user_id'])) {
       $stmt = $conn->prepare($sql);
       $stmt->bind_param('ii', $cart_id, $product_id);
       $stmt->execute();
+      header("Location: shop.php");
   }
 
 // Sayfalamayı ayarla

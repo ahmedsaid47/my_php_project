@@ -84,6 +84,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["add_to_cart"])) {
     $stmt = $conn->prepare($sql);
     $stmt->bind_param('ii', $cart_id, $product_id);
     $stmt->execute();
+    header("Location: index.php");
+
 }
 
 // Veritabanından veri çekmek için fonksiyon
