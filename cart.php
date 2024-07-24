@@ -8,36 +8,35 @@ if (!isset($_SESSION['user_id'])) {
 
 include 'db.php';
 
-if (isset($_SESSION['user_id'])) {
-    $user_id = $_SESSION['user_id'];
-  
-    // Kullanıcının sepet ID'sini al
-    $sql = "SELECT cart_id FROM carts WHERE user_id = $user_id";
-    $result = $conn->query($sql);
-  
+$user_id = $_SESSION['user_id'];
+
+// Kullanıcının sepet ID'sini al
+$sql = "SELECT cart_id FROM carts WHERE user_id = ?";
+$stmt = $conn->prepare($sql);
+$stmt->bind_param('i', $user_id);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows > 0) {
+    $row = $result->fetch_assoc();
+    $cart_id = $row['cart_id'];
+
+    // Sepetteki ürün sayısını al
+    $sql = "SELECT SUM(quantity) as cart_count FROM cart_items WHERE cart_id = ?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param('i', $cart_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
-        $cart_id = $row['cart_id'];
-  
-        // Sepetteki ürün sayısını al
-        $sql = "SELECT SUM(quantity) as cart_count FROM cart_items WHERE cart_id = $cart_id";
-        $result = $conn->query($sql);
-  
-        if ($result->num_rows > 0) {
-            $row = $result->fetch_assoc();
-            $_SESSION['cart_count'] = $row['cart_count'];
-        } else {
-            $_SESSION['cart_count'] = 0;
-        }
+        $_SESSION['cart_count'] = $row['cart_count'];
     } else {
         $_SESSION['cart_count'] = 0;
     }
-  } else {
+} else {
     $_SESSION['cart_count'] = 0;
-  }
-  
-
-$user_id = $_SESSION['user_id'];
+}
 
 // Kullanıcının sepetini al
 $sql = "SELECT p.product_id, p.name, p.price, p.image_url, SUM(ci.quantity) as quantity 
@@ -55,9 +54,9 @@ $cart_items = $result->fetch_all(MYSQLI_ASSOC);
 // Ürün çıkarma işlemi
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["remove_item"])) {
     $product_id = $_POST['product_id'];
-    $sql = "DELETE FROM cart_items WHERE cart_id = (SELECT cart_id FROM carts WHERE user_id = ?) AND product_id = ?";
+    $sql = "DELETE FROM cart_items WHERE cart_id = ? AND product_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('ii', $user_id, $product_id);
+    $stmt->bind_param('ii', $cart_id, $product_id);
     $stmt->execute();
     header("Location: cart.php");
     exit();
@@ -68,9 +67,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["update_quantity"])) {
     $product_id = $_POST['product_id'];
     $quantity = $_POST['quantity'];
     if ($quantity > 0) {
-        $sql = "UPDATE cart_items SET quantity = ? WHERE cart_id = (SELECT cart_id FROM carts WHERE user_id = ?) AND product_id = ?";
+        $sql = "UPDATE cart_items SET quantity = ? WHERE cart_id = ? AND product_id = ?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param('iii', $quantity, $user_id, $product_id);
+        $stmt->bind_param('iii', $quantity, $cart_id, $product_id);
         $stmt->execute();
     }
     header("Location: cart.php");
@@ -91,9 +90,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST["checkout"])) {
     // Burada satın alma işlemini gerçekleştirebilirsiniz (örneğin, ödeme işlemi, sipariş kaydı vb.)
 
     // Sepeti boşaltma
-    $sql = "DELETE FROM cart_items WHERE cart_id = (SELECT cart_id FROM carts WHERE user_id = ?)";
+    $sql = "DELETE FROM cart_items WHERE cart_id = ?";
     $stmt = $conn->prepare($sql);
-    $stmt->bind_param('i', $user_id);
+    $stmt->bind_param('i', $cart_id);
     $stmt->execute();
 
     echo "<script>alert('Siparişiniz gerçekleşti!'); window.location.href='cart.php';</script>";
